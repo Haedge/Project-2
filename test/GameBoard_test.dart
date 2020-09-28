@@ -18,8 +18,9 @@ void main() {
 
 void testBoardEquality(int size) {
   Random rng = Random(5);
+  Random rng2 = Random(5);
   GameBoard board1 = GameBoard(size, rng);
-  GameBoard board2 = GameBoard(size, rng);
+  GameBoard board2 = GameBoard(size, rng2);
   for (int i=0; i<size; i++) {
     for (int j=0; j<size; j++) {
       expect(board1.getLetterAtPosition(i, j) == board2.getLetterAtPosition(i, j), true);
