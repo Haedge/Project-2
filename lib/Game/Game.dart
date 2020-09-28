@@ -1,9 +1,11 @@
 import 'dart:math';
+import 'dart:io';
 
 import 'package:boggle/Game/GameBoard.dart';
 import 'package:boggle/Position.dart';
 
 class Game {
+  String wordFilePath = 'bogglewords.txt';
   GameBoard _board;
   int _boardSize;
   Set _validWords;
@@ -13,6 +15,15 @@ class Game {
     _board = GameBoard(_boardSize, Random(randomSeed));
     _submittedWords = Set();
     _validWords = Set();
+    _readInValidWords();
+  }
+
+  Future _readInValidWords() async {
+    var wordFile = File(wordFilePath);
+    List<String> lines = await wordFile.readAsLines();
+    for (String line in lines) {
+      _validWords.add(line);
+    }
   }
 
   String getLetterAtPosition(Position pos) => _board.getLetterAtPosition(pos.column, pos.row);
