@@ -5,7 +5,7 @@ import 'package:boggle/Game/GameBoard.dart';
 import 'package:boggle/Position.dart';
 
 class Game {
-  String wordFilePath = 'bogglewords.txt';
+  String wordFilePath = 'assets/bogglewords.txt';
   GameBoard _board;
   int _boardSize;
   Set _validWords;
@@ -18,13 +18,17 @@ class Game {
     _readInValidWords();
   }
 
-  Future _readInValidWords() async {
+  void _readInValidWords() {
     var wordFile = File(wordFilePath);
-    List<String> lines = await wordFile.readAsLines();
+    List<String> lines = wordFile.readAsLinesSync();
     for (String line in lines) {
-      _validWords.add(line);
+      _validWords.add(line.toUpperCase());
     }
   }
+
+  Set getValidWords() => _validWords;
+
+  String getBoardString() => _board.toString();
 
   String getLetterAtPosition(Position pos) => _board.getLetterAtPosition(pos.column, pos.row);
 
@@ -35,7 +39,8 @@ class Game {
       return false;
     }
     String wordString = _convertPositionListToString(positions);
-    if (_validWords.contains(wordString)) {
+    print(wordString);
+    if (_validWords.contains(wordString) && !_submittedWords.contains(wordString)) {
       _submittedWords.add(wordString);
       return true;
     }

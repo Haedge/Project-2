@@ -9,24 +9,24 @@ class Position{
   }
 
   bool directlyAbove(Position other) {
-    return column == other.column && row == other.row - 1;
+    return column == other.column && row - 1 == other.row;
   }
 
   bool directlyBelow(Position other) {
-    return column == other.column && row == other.row + 1;
+    return column == other.column && row + 1 == other.row;
   }
 
   bool directlyLeft(Position other) {
-    return row == other.row && column == other.column - 1;
+    return row == other.row && column - 1 == other.column;
   }
 
   bool directlyRight(Position other) {
-    return row == other.row && column == other.column + 1;
+    return row == other.row && column + 1 == other.column;
   }
 
   bool inDiagonal(Position other) {
-    if (row == other.row + 1 || row == other.row - 1) {
-      return column == other.column + 1 || column == other.column - 1;
+    if (row + 1 == other.row || row - 1 == other.row) {
+      return column + 1 == other.column || column - 1 == other.column;
     }
     return false;
   }
