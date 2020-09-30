@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 void main() {
   runApp(MyApp());
@@ -15,13 +16,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Boggle',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.pink,
 
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Boggle'),
     );
   }
 }
@@ -35,41 +36,238 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
+    return new Scaffold(
+        appBar: new AppBar(
+          title: new Text("Boggle"),
+          backgroundColor: Colors.pinkAccent,
+        ),
+        body: Center(
+            child:
+            Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Container(
+                    width: 300,
+                    height: 50,
+                    child:RaisedButton(child: Text("Host a Game"), color: Colors.pinkAccent, onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => CreateGamePage()),);}),
+                  ),
+                  SizedBox(height:20),
+                  Container(
+                    width: 300,
+                    height: 50,
+                    child:RaisedButton(child: Text("Join a Game"), color: Colors.pinkAccent, onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => JoinGamePage()),);}),
+                  )
+                ]
+            )
+        )
+    );
+  }
+}
 
+class CreateGamePage extends StatefulWidget {
+  CreateGamePage({Key key, this.title}) : super(key: key);
+
+  final String title;
+
+  @override
+  _CreateGamePageState createState() => _CreateGamePageState();
+}
+
+class _CreateGamePageState extends State<CreateGamePage> {
+  int boardSize;
+  Random random = new Random();
+  int gameCode;
+  TextEditingController nameC = new TextEditingController();
+  List<int> sizes = [4, 5, 6];
+  int sizeIndex = 1;
+
+  @override Widget build(BuildContext context) {
+    gameCode = random.nextInt(99999);
+
+    return new Scaffold(
+        appBar: new AppBar(
+          title: new Text("Host a Game"),
+          backgroundColor: Colors.pinkAccent,
+        ),
+        body: Center(
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Row(
+                      children: <Widget>[
+                        Text("Screen Name:   "),
+                        SizedBox(width: 200, child: TextField(controller: nameC, keyboardType: TextInputType.text))
+                      ]
+                  ),
+                  Row(
+                      children: <Widget>[
+                        Text("Board Size:   "),
+                        Container(
+                            padding: EdgeInsets.only(left: 10, right: 10),
+                            child: DropdownButton(
+                                value: sizeIndex,
+                                items: [
+                                  DropdownMenuItem(
+                                      child: Text("4X4"),
+                                      value: 1
+                                  ),
+                                  DropdownMenuItem(
+                                      child: Text("5X5"),
+                                      value: 2
+                                  ),
+                                  DropdownMenuItem(
+                                      child: Text("6X6"),
+                                      value: 3
+                                  )
+                                ],
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    sizeIndex = newValue;
+                                  });
+                                }
+                            )
+                        )
+                      ]
+                  ),
+                  Container(
+                    width: 200,
+                    height: 50,
+                    child:RaisedButton(child: Text("Host Game"), color: Colors.pinkAccent, onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: true, gameCode: gameCode)),);}),
+                  )
+                ]
+            )
+        )
+    );
+  }
+}
+
+class JoinGamePage extends StatefulWidget {
+  JoinGamePage({Key key, this.title}) : super(key: key);
+
+  final String title;
+
+  @override
+  _JoinGamePageState createState() => _JoinGamePageState();
+}
+
+class _JoinGamePageState extends State<JoinGamePage> {
+  TextEditingController nameC = new TextEditingController();
+  TextEditingController gameCodeC = new TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+        appBar: new AppBar(
+          title: new Text("Join a Game"),
+          backgroundColor: Colors.pinkAccent,
+        ),
+        body: Center(
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Row(
+                      children: <Widget>[
+                        Text("Screen Name:   "),
+                        SizedBox(width: 200, child: TextField(controller: nameC, keyboardType: TextInputType.text))
+                      ]
+                  ),
+                  Row(
+                      children: <Widget>[
+                        Text("Game Code:   "),
+                        SizedBox(width: 200, child: TextField(controller: gameCodeC, keyboardType: TextInputType.number))
+                      ]
+                  ),
+                  Container(
+                    width: 200,
+                    height: 50,
+                    child:RaisedButton(child: Text("Join Game"), color: Colors.pinkAccent, onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: false, gameCode: int.parse(gameCodeC.text.toString()))),);}),
+                  )
+                ]
+
+            )
+        )
+    );
+  }
+}
+
+class StartGamePage extends StatefulWidget {
+  StartGamePage({Key key, this.title, this.host, this.gameCode}) : super(key: key);
+
+  final String title;
+
+  final bool host;
+
+  final int gameCode;
+
+  @override
+  _StartGamePageState createState() => _StartGamePageState();
+}
+
+class _StartGamePageState extends State<StartGamePage> {
+
+  @override
+  Widget build(BuildContext context) {
+    bool host = widget.host;
+    if (host){
+      return hostBuild(context);
+    }
+    return notHostBuild(context);
+  }
+
+  Widget hostBuild(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-
-        title: Text(widget.title),
+      appBar: new AppBar(
+        title: new Text("Participants"),
+        backgroundColor: Colors.pinkAccent,
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
+            Container(
+              width: 200,
+              height: 50,
+              child:RaisedButton(child: Text("Start Game"), color: Colors.pinkAccent, onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode)),);}),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ),
+
+          ]
+        )
+      )
     );
   }
+
+  Widget notHostBuild(BuildContext context){
+    // TODO: implement build
+    throw UnimplementedError();
+  }
+
+}
+
+class PlayGamePage extends StatefulWidget {
+  PlayGamePage({Key key, this.title, this.gameCode}) : super(key: key);
+
+  final String title;
+
+  final int gameCode;
+
+  @override
+  _PlayGamePageState createState() => _PlayGamePageState();
+}
+
+class _PlayGamePageState extends State<PlayGamePage> {
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    throw UnimplementedError();
+  }
+
 }
