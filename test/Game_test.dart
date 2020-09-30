@@ -34,4 +34,9 @@ void main() {
     Game g = Game(4, 2);
     expect(g.isWordValid([Position(3, 2), Position(3, 1), Position(3, 0)]), false);
   });
+
+  test('Valid word and positions but it repeats positions',() {
+    Game g = Game(4, 2);
+    expect(g.isWordValid([Position(0, 2), Position(0, 3), Position(0, 2)]), false);
+  });
 }

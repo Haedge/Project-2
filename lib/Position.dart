@@ -30,4 +30,14 @@ class Position{
     }
     return false;
   }
+
+  @override
+  bool operator ==(Object other) => other is Position && row == other.row && column == other.column;
+
+  @override
+  int get hashCode => toString().hashCode;
+
+  String toString() {
+    return "($column, $row)";
+  }
 }
