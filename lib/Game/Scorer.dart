@@ -50,7 +50,7 @@ class Scorer {
     Set duplicates = Set();
     List names = _wordLists.keys.toList();
     for (int i=0; i<names.length-1; i++) {
-      for (int j=i; j<names.length; j++) {
+      for (int j=i+1; j<names.length; j++) {
         for (String word in _wordLists[names[i]]) {
           if (_wordLists[names[j]].contains(word)) {
             duplicates.add(word);
