@@ -48,10 +48,14 @@ class Game {
   }
 
   bool _wordPositionsValid(List<Position> positions) {
+    Set<Position> positionsAlreadyPlayed = Set();
+    positionsAlreadyPlayed.add(positions[0]);
     for (int i=1; i<positions.length; i++) {
-      if (!_validPosition(positions[i]) || !_validPosition(positions[i-1]) || !positions[i].isNeighbor(positions[i-1])) {
+      if (!_validPosition(positions[i]) || !_validPosition(positions[i-1])
+          || !positions[i].isNeighbor(positions[i-1]) || positionsAlreadyPlayed.contains(positions[i])) {
         return false;
       }
+      positionsAlreadyPlayed.add(positions[i]);
     }
     return true;
   }
