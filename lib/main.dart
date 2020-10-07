@@ -278,6 +278,15 @@ class _PlayGamePageState extends State<PlayGamePage> {
   Game game;
   List<List<TilePainter>> boardRows = new List<List<TilePainter>>();
   List<TilePainter> currentTiles = new List<TilePainter>();
+  String currentWord = "";
+  List<Position> currentPositions = new List<Position>();
+
+  void addToCurrentTiles(TilePainter tile) {
+    tile.select();
+    currentWord += tile.getLetter();
+    currentPositions.add(tile.getPosition());
+    currentTiles.add(tile);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -299,13 +308,11 @@ class _PlayGamePageState extends State<PlayGamePage> {
                 builder: (_, constraints) => Container(
                     width: (constraints.widthConstraints().maxWidth - 20) / widget.size,
                     height: (constraints.widthConstraints().maxWidth - 20) / widget.size,
-                    color: Colors.black,
-                    child: GestureDetector(
+                    child: GestureDetector( // figured this out at https://stackoverflow.com/questions/57100266/how-do-i-get-to-tap-on-a-custompaint-path-in-flutter-using-gesturedetect
                       child: CustomPaint(painter: boardRows[i][j]),
                       onTap: () {
                         if (boardRows[i][j].getPosition().isNeighbor(currentTiles.last.getPosition()) && !currentTiles.contains(boardRows[i][j])) {
-                          currentTiles.add(boardRows[i][j]);
-                          boardRows[i][j].select();
+                          addToCurrentTiles(boardRows[i][j]);
                         }
                       },
                     )
@@ -315,16 +322,10 @@ class _PlayGamePageState extends State<PlayGamePage> {
     }
     // add timer to body
     for (int i=0; i<widget.size; i++) {
-      body.add(Row(children: UIBoardRows[i]));
+      body.add(Row(mainAxisAlignment: MainAxisAlignment.center,children: UIBoardRows[i]));
     }
-    String currentWord = "";
-    List<Position> currentPositions = new List<Position>();
-    for (int i=0; i<currentTiles.length; i++) {
-      currentWord += currentTiles[i].getLetter();
-      currentPositions.add(currentTiles[i].getPosition());
-    }
-    body.add(Text(currentWord));
-    body.add(RaisedButton(child: Text("enter word"), onPressed: () {
+    body.add(Text("Selected Word:  $currentWord"));
+    body.add(RaisedButton(child: Text("Enter Word"), onPressed: () {
       if (game.isWordValid(currentPositions)) {
         for (TilePainter t in currentTiles) {
           t.changeColor(Colors.greenAccent);
@@ -341,8 +342,18 @@ class _PlayGamePageState extends State<PlayGamePage> {
     }
     ));
 
-    // TODO: implement build
-    throw UnimplementedError();
+    return Scaffold(
+        appBar: new AppBar(
+          title: new Text("Play Game"),
+          backgroundColor: Colors.pinkAccent,
+        ),
+        body: Center(
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: body
+            )
+        )
+    );
   }
 
 }
