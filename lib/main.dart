@@ -191,7 +191,8 @@ class _JoinGamePageState extends State<JoinGamePage> {
                     width: 200,
                     height: 50,
                     child:RaisedButton(child: Text("Join Game"), color: Colors.pinkAccent, onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: false, gameCode: int.parse(gameCodeC.text.toString()), name: nameC.text)),);}),
+                      //Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: false, gameCode: int.parse(gameCodeC.text.toString()), name: nameC.text)),);
+                    }),
                   )
                 ]
 
@@ -242,8 +243,9 @@ class _StartGamePageState extends State<StartGamePage> {
             Container(
               width: 200,
               height: 50,
-              child:RaisedButton(child: Text("Start Game"), color: Colors.pinkAccent, onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name)),);}),
+              child:RaisedButton(child: Text("Start Game"), color: Colors.pinkAccent, onPressed: () {}
+                //Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name)),);}
+                ),
             ),
 
           ]
