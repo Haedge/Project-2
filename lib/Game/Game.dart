@@ -15,7 +15,7 @@ class Game {
     _board = GameBoard(_boardSize, Random(randomSeed));
     _submittedWords = Set();
     _validWords = Set();
-    _readInValidWords();
+    //_readInValidWords();
   }
 
   void _readInValidWords() {
