@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:boggle/Game/Game.dart';
@@ -8,12 +9,11 @@ void main() {
   runApp(MyApp());
 }
 
-
-
 var _test = 'This is testing 2';
 var _test2 = 'This is testing 3';
 var _test3 = 'Can I add this from android studio?';
 
+Timer _timer;
 
 
 class MyApp extends StatelessWidget {
@@ -282,11 +282,52 @@ class _PlayGamePageState extends State<PlayGamePage> {
   String currentWord = "";
   List<Position> currentPositions = new List<Position>();
 
+  int _gametime = 180;
+
+  int _gamemins = 3;
+
+  int _gamesecs = 00;
+
   void addToCurrentTiles(TilePainter tile) {
     tile.select();
     currentWord += tile.getLetter();
     currentPositions.add(tile.getPosition());
     currentTiles.add(tile);
+  }
+
+  void _startTimer() {
+    const second = const Duration(seconds: 1);
+    if (_gametime == 180) {
+      _timer = new Timer.periodic(second, (Timer _timer) =>
+          setState(() {
+            if (_gametime < 1) {
+              _timer.cancel();
+            } else {
+              _gametime = _gametime - 1;
+
+              _gamemins = _gametime ~/ 60;
+
+              _gamesecs = _gametime - (_gamemins * 60);
+            }
+          }));
+    } else if (_gametime != 180) {
+      _timer.cancel();
+      _gametime = 180;
+      _timer = new Timer.periodic(second, (Timer _timer) =>
+          setState(() {
+            if (_gametime < 1) {
+              _timer.cancel();
+              @override
+              _ScorePageState createState() => _ScorePageState();
+            } else {
+              _gametime = _gametime - 1;
+
+              _gamemins = _gametime ~/ 60;
+
+              _gamesecs = _gametime - (_gamemins * 60);
+            }
+          }));
+    }
   }
 
   @override
@@ -322,6 +363,9 @@ class _PlayGamePageState extends State<PlayGamePage> {
       }
     }
     // add timer to body
+    //At very start of timer/every minute, it shows only one 0 instead of 00 like 2:00, will fix later on
+    _startTimer();
+    body.add(Text('$_gamemins' + ' : ' + '$_gamesecs'));
     for (int i=0; i<widget.size; i++) {
       body.add(Row(mainAxisAlignment: MainAxisAlignment.center,children: UIBoardRows[i]));
     }
