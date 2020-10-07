@@ -299,7 +299,6 @@ class _PlayGamePageState extends State<PlayGamePage> {
 
   void _startTimer() {
     const second = const Duration(seconds: 1);
-    if (_gametime == 180) {
       _timer = new Timer.periodic(second, (Timer _timer) =>
           setState(() {
             if (_gametime < 1) {
@@ -314,24 +313,6 @@ class _PlayGamePageState extends State<PlayGamePage> {
               _gamesecs = _gametime - (_gamemins * 60);
             }
           }));
-    } else if (_gametime != 180) {
-      _timer.cancel();
-      _gametime = 180;
-      _timer = new Timer.periodic(second, (Timer _timer) =>
-          setState(() {
-            if (_gametime < 1) {
-              _timer.cancel();
-              @override
-              _ScorePageState createState() => _ScorePageState();
-            } else {
-              _gametime = _gametime - 1;
-
-              _gamemins = _gametime ~/ 60;
-
-              _gamesecs = _gametime - (_gamemins * 60);
-            }
-          }));
-    }
   }
 
   @override
