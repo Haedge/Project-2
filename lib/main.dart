@@ -272,11 +272,70 @@ class PlayGamePage extends StatefulWidget {
 class _PlayGamePageState extends State<PlayGamePage> {
 
   Game game;
-  Color highlight = Colors.orangeAccent;
+  List<List<TilePainter>> boardRows = new List<List<TilePainter>>();
+  List<TilePainter> currentTiles = new List<TilePainter>();
 
   @override
   Widget build(BuildContext context) {
     game = new Game(widget.size, widget.gameCode);
+    List<Characters> letters = game.getBoardString() as List<Characters>;
+    for (int i=0; i<widget.size; i++) {
+      boardRows.add(new List<TilePainter>());
+      for (int j=0; j<widget.size; j++) {
+        boardRows[i].add(new  TilePainter(letters.removeAt(0), Position(j,i)));
+      }
+    }
+    List<Widget> body = new List<Widget>();
+    List<List<Widget>> UIBoardRows = new List<List<Widget>>();
+    for (int i=0; i<widget.size; i++) {
+      UIBoardRows.add(new List<Widget>());
+      for (int j=0; j<widget.size; j++) {
+        UIBoardRows[i].add(
+            LayoutBuilder(
+                builder: (_, constraints) => Container(
+                    width: (constraints.widthConstraints().maxWidth - 20) / widget.size,
+                    height: (constraints.widthConstraints().maxWidth - 20) / widget.size,
+                    color: Colors.black,
+                    child: GestureDetector(
+                      child: CustomPaint(painter: boardRows[i][j]),
+                      onTap: () {
+                        if (boardRows[i][j].getPosition().isNeighbor(currentTiles.last.getPosition()) && !currentTiles.contains(boardRows[i][j])) {
+                          currentTiles.add(boardRows[i][j]);
+                          boardRows[i][j].select();
+                        }
+                      },
+                    )
+            )
+        ));
+      }
+    }
+    // add timer to body
+    for (int i=0; i<widget.size; i++) {
+      body.add(Row(children: UIBoardRows[i]));
+    }
+    String currentWord = "";
+    List<Position> currentPositions = new List<Position>();
+    for (int i=0; i<currentTiles.length; i++) {
+      currentWord += currentTiles[i].getLetter();
+      currentPositions.add(currentTiles[i].getPosition());
+    }
+    body.add(Text(currentWord));
+    body.add(RaisedButton(child: Text("enter word"), onPressed: () {
+      if (game.isWordValid(currentPositions)) {
+        for (TilePainter t in currentTiles) {
+          t.changeColor(Colors.greenAccent);
+        }
+      } else {
+        for (TilePainter t in currentTiles) {
+          t.changeColor(Colors.redAccent);
+        }
+      }
+      // here make the program wait half a second
+      for (TilePainter t in currentTiles) {
+        t.reset();
+      }
+    }
+    ));
 
     // TODO: implement build
     throw UnimplementedError();
