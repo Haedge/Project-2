@@ -281,11 +281,20 @@ class _PlayGamePageState extends State<PlayGamePage> {
   String currentWord = "";
   List<Position> currentPositions = new List<Position>();
 
-  void addToCurrentTiles(TilePainter tile) {
+  void addToCurrentWord(TilePainter tile) {
     tile.select();
     currentWord += tile.getLetter();
     currentPositions.add(tile.getPosition());
     currentTiles.add(tile);
+  }
+
+  void resetCurrentWord() {
+    for (TilePainter t in currentTiles) {
+      t.reset();
+    }
+    currentTiles = new List<TilePainter>();
+    currentWord = "";
+    currentPositions = new List<Position>();
   }
 
   @override
@@ -312,7 +321,7 @@ class _PlayGamePageState extends State<PlayGamePage> {
                       child: CustomPaint(painter: boardRows[i][j]),
                       onTap: () {
                         if (boardRows[i][j].getPosition().isNeighbor(currentTiles.last.getPosition()) && !currentTiles.contains(boardRows[i][j])) {
-                          addToCurrentTiles(boardRows[i][j]);
+                          addToCurrentWord(boardRows[i][j]);
                         }
                       },
                     )
@@ -336,9 +345,7 @@ class _PlayGamePageState extends State<PlayGamePage> {
         }
       }
       // here make the program wait half a second
-      for (TilePainter t in currentTiles) {
-        t.reset();
-      }
+      resetCurrentWord();
     }
     ));
 
