@@ -302,6 +302,8 @@ class _PlayGamePageState extends State<PlayGamePage> {
           setState(() {
             if (_gametime < 1) {
               _timer.cancel();
+              @override
+              _ScorePageState createState() => _ScorePageState();
             } else {
               _gametime = _gametime - 1;
 
