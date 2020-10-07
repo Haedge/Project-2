@@ -190,7 +190,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
                     width: 200,
                     height: 50,
                     child:RaisedButton(child: Text("Join Game"), color: Colors.pinkAccent, onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: false, gameCode: int.parse(gameCodeC.text.toString()))),);}),
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: false, gameCode: int.parse(gameCodeC.text.toString()), name: nameC.text)),);}),
                   )
                 ]
 
@@ -201,7 +201,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
 }
 
 class StartGamePage extends StatefulWidget {
-  StartGamePage({Key key, this.title, this.host, this.gameCode, this.size}) : super(key: key);
+  StartGamePage({Key key, this.title, this.host, this.gameCode, this.size, this.name}) : super(key: key);
 
   final String title;
 
@@ -210,6 +210,8 @@ class StartGamePage extends StatefulWidget {
   final int gameCode;
 
   final int size;
+
+  final String name;
 
   @override
   _StartGamePageState createState() => _StartGamePageState();
@@ -240,7 +242,7 @@ class _StartGamePageState extends State<StartGamePage> {
               width: 200,
               height: 50,
               child:RaisedButton(child: Text("Start Game"), color: Colors.pinkAccent, onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size)),);}),
+                Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name)),);}),
             ),
 
           ]
@@ -257,13 +259,15 @@ class _StartGamePageState extends State<StartGamePage> {
 }
 
 class PlayGamePage extends StatefulWidget {
-  PlayGamePage({Key key, this.title, this.gameCode, this.size}) : super(key: key);
+  PlayGamePage({Key key, this.title, this.gameCode, this.size, this.name}) : super(key: key);
 
   final String title;
 
   final int gameCode;
 
   final int size;
+
+  final String name;
 
   @override
   _PlayGamePageState createState() => _PlayGamePageState();
@@ -341,4 +345,28 @@ class _PlayGamePageState extends State<PlayGamePage> {
     throw UnimplementedError();
   }
 
+}
+
+class ScorePage extends StatefulWidget {
+  ScorePage({Key key, this.title, this.gameCode, this.score, this.name}) : super(key: key);
+
+  final String title;
+
+  final int gameCode;
+
+  final int score;
+
+  final String name;
+
+  @override
+  _ScorePageState createState() => _ScorePageState();
+}
+
+class _ScorePageState extends State<ScorePage>{
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    throw UnimplementedError();
+  }
 }
