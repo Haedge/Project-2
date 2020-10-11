@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:io';
-
+import 'dart:async' show Future;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:boggle/Game/GameBoard.dart';
 import 'package:boggle/Position.dart';
 
@@ -11,15 +12,25 @@ class Game {
   Set _validWords;
   Set _submittedWords;
 
+
   Game(this._boardSize, int randomSeed) {
     _board = GameBoard(_boardSize, Random(randomSeed));
     _submittedWords = Set();
     _validWords = Set();
-    //_readInValidWords();
+    loadInValidWords();
+    // _readInValidWords();
+  }
+
+  void loadInValidWords() async {
+    String wordFile = await rootBundle.loadString(wordFilePath);
+    List<String> lines = wordFile.split("\n");
+    for (String line in lines) {
+      _validWords.add(line.toUpperCase());
+    }
   }
 
   void _readInValidWords() {
-    var wordFile = File(wordFilePath);
+    var wordFile = new File(wordFilePath);
     List<String> lines = wordFile.readAsLinesSync();
     for (String line in lines) {
       _validWords.add(line.toUpperCase());
@@ -27,6 +38,8 @@ class Game {
   }
 
   Set getValidWords() => _validWords;
+
+  Set getSubmittedWords() => _submittedWords;
 
   String getBoardString() => _board.toString();
 
@@ -66,5 +79,11 @@ class Game {
       wordString += getLetterAtPosition(pos).toUpperCase();
     }
     return wordString;
+  }
+
+  void printSubmittedWords() {
+    for (String word in _submittedWords) {
+      print(word);
+    }
   }
 }

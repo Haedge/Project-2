@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:boggle/Position.dart';
@@ -10,8 +10,8 @@ class TilePainter extends CustomPainter {
   Color color;
   bool selected;
 
-  TilePainter(Characters letter, Position position) {
-    this.letter = letter.toString();
+  TilePainter(String letter, Position position) {
+    this.letter = letter;
     this.position = position;
     color = Colors.white;
     selected = false;
@@ -38,13 +38,18 @@ class TilePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint() ..color = this.color;
-
-    final ParagraphBuilder pBuild = ParagraphBuilder(ParagraphStyle(textAlign: TextAlign.center)) ..addText(letter);
-    final Paragraph p = pBuild.build();
+    final ts = ui.TextStyle(
+      color: Colors.black,
+      fontSize: 30,
+    );
+    final pBuild = ui.ParagraphBuilder(ui.ParagraphStyle(textAlign: TextAlign.center, textDirection: TextDirection.ltr)) .. pushStyle(ts) ..addText(letter);
+    final p = pBuild.build();
+    final constraints = ui.ParagraphConstraints(width: size.width);
+    p.layout(constraints);
 
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
-    canvas.drawParagraph(p, Offset(0, 0));
+    canvas.drawParagraph(p, Offset(0, (size.height - 30) / 2 ));
   }
 
   @override

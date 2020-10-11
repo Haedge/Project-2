@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:boggle/Game/Game.dart';
 import 'package:boggle/Position.dart';
 import 'package:boggle/Tile.dart';
+import 'package:boggle/Game/Scorer.dart';
 
 void main() {
   runApp(MyApp());
@@ -142,7 +144,7 @@ class _CreateGamePageState extends State<CreateGamePage> {
                     width: 200,
                     height: 50,
                     child:RaisedButton(child: Text("Host Game"), color: Colors.pinkAccent, onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: true, gameCode: gameCode, size: sizes[sizeIndex])),);}),
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: true, gameCode: gameCode, size: sizes[sizeIndex-1], name: nameC.text)),);}),
                   )
                 ]
             )
@@ -241,10 +243,14 @@ class _StartGamePageState extends State<StartGamePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Container(
-              width: 200,
+              width: 100,
               height: 50,
-              child:RaisedButton(child: Text("Start Game"), color: Colors.pinkAccent, onPressed: () {}
-                //Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name)),);}
+              child:RaisedButton(
+                  child: Text("Start Game"),
+                  color: Colors.pinkAccent,
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name)),);
+                  }
                 ),
             ),
 
@@ -290,39 +296,45 @@ class _PlayGamePageState extends State<PlayGamePage> {
 
   int _gamesecs = 00;
 
-  void addToCurrentTiles(TilePainter tile) {
+  Timer _timer;
+
+  Map<String, Set> wordLists;
+
+  void addToCurrentWord(TilePainter tile) {
     tile.select();
     currentWord += tile.getLetter();
     currentPositions.add(tile.getPosition());
     currentTiles.add(tile);
   }
 
+  void resetCurrentWord(){
+    for (TilePainter t in currentTiles) {
+      t.reset();
+    }
+    currentTiles = new List<TilePainter>();
+    currentWord = "";
+    currentPositions = new List<Position>();
+  }
+
   void _startTimer() {
     const second = const Duration(seconds: 1);
-    if (_gametime == 180) {
-      _timer = new Timer.periodic(second, (Timer _timer) =>
+    if (_timer == null) {
+      _timer = new Timer.periodic(second, (Timer timer) =>
           setState(() {
             if (_gametime < 1) {
-              _timer.cancel();
-              @override
-              _ScorePageState createState() => _ScorePageState();
-            } else {
-              _gametime = _gametime - 1;
-
-              _gamemins = _gametime ~/ 60;
-
-              _gamesecs = _gametime - (_gamemins * 60);
-            }
-          }));
-    } else if (_gametime != 180) {
-      _timer.cancel();
-      _gametime = 180;
-      _timer = new Timer.periodic(second, (Timer _timer) =>
-          setState(() {
-            if (_gametime < 1) {
-              _timer.cancel();
-              @override
-              _ScorePageState createState() => _ScorePageState();
+              timer.cancel();
+              game.printSubmittedWords();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => ScorePage(
+                        title: "Score Game",
+                        gameCode: widget.gameCode,
+                        scorer: Scorer(<String, Set>{widget.name: game.getSubmittedWords()}),
+                        name: widget.name
+                    )
+                ),
+              );
             } else {
               _gametime = _gametime - 1;
 
@@ -335,47 +347,52 @@ class _PlayGamePageState extends State<PlayGamePage> {
   }
 
   @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     game = new Game(widget.size, widget.gameCode);
-    List<Characters> letters = game.getBoardString() as List<Characters>;
+    List<Widget> body = new List<Widget>();
+    List<List<Widget>> uiBoardRows = new List<List<Widget>>();
     for (int i=0; i<widget.size; i++) {
       boardRows.add(new List<TilePainter>());
+      uiBoardRows.add(new List<Widget>());
       for (int j=0; j<widget.size; j++) {
-        boardRows[i].add(new  TilePainter(letters.removeAt(0), Position(j,i)));
-      }
-    }
-    List<Widget> body = new List<Widget>();
-    List<List<Widget>> UIBoardRows = new List<List<Widget>>();
-    for (int i=0; i<widget.size; i++) {
-      UIBoardRows.add(new List<Widget>());
-      for (int j=0; j<widget.size; j++) {
-        UIBoardRows[i].add(
-            LayoutBuilder(
-                builder: (_, constraints) => Container(
-                    width: (constraints.widthConstraints().maxWidth - 20) / widget.size,
-                    height: (constraints.widthConstraints().maxWidth - 20) / widget.size,
-                    child: GestureDetector( // figured this out at https://stackoverflow.com/questions/57100266/how-do-i-get-to-tap-on-a-custompaint-path-in-flutter-using-gesturedetect
-                      child: CustomPaint(painter: boardRows[i][j]),
-                      onTap: () {
-                        if (boardRows[i][j].getPosition().isNeighbor(currentTiles.last.getPosition()) && !currentTiles.contains(boardRows[i][j])) {
-                          addToCurrentTiles(boardRows[i][j]);
-                        }
-                      },
-                    )
+        Position p =  Position(j,i);
+        boardRows[i].add(new  TilePainter(game.getLetterAtPosition(p), p));
+        uiBoardRows[i].add(
+            GestureDetector( // figured this out at https://stackoverflow.com/questions/57100266/how-do-i-get-to-tap-on-a-custompaint-path-in-flutter-using-gesturedetect
+              child: Container(
+                  width: (MediaQuery.of(context).size.width - 20) / widget.size, // figured out how to get screen size at https://flutter.dev/docs/development/ui/layout/responsive
+                  height: (MediaQuery.of(context).size.width - 20) / widget.size,
+                  child: CustomPaint(painter: boardRows[i][j])
+              ),
+              onTap: () {
+                if (currentTiles.length == 0 || (p.isNeighbor(currentTiles.last.getPosition()) && !currentTiles.contains(boardRows[i][j]))) {
+                  addToCurrentWord(boardRows[i][j]);
+                }
+              },
             )
-        ));
+        );
       }
     }
-    // add timer to body
+
     //At very start of timer/every minute, it shows only one 0 instead of 00 like 2:00, will fix later on
     _startTimer();
     body.add(Text('$_gamemins' + ' : ' + '$_gamesecs'));
+
     for (int i=0; i<widget.size; i++) {
-      body.add(Row(mainAxisAlignment: MainAxisAlignment.center,children: UIBoardRows[i]));
+      body.add(Row(mainAxisAlignment: MainAxisAlignment.center,children: uiBoardRows[i]));
     }
+
     body.add(Text("Selected Word:  $currentWord"));
+
     body.add(RaisedButton(child: Text("Enter Word"), onPressed: () {
-      if (game.isWordValid(currentPositions)) {
+      bool b = game.isWordValid(currentPositions);
+      if (b) {
         for (TilePainter t in currentTiles) {
           t.changeColor(Colors.greenAccent);
         }
@@ -384,10 +401,7 @@ class _PlayGamePageState extends State<PlayGamePage> {
           t.changeColor(Colors.redAccent);
         }
       }
-      // here make the program wait half a second
-      for (TilePainter t in currentTiles) {
-        t.reset();
-      }
+      Timer t = new Timer(const Duration(milliseconds: 500), () => resetCurrentWord());
     }
     ));
 
@@ -408,13 +422,13 @@ class _PlayGamePageState extends State<PlayGamePage> {
 }
 
 class ScorePage extends StatefulWidget {
-  ScorePage({Key key, this.title, this.gameCode, this.score, this.name}) : super(key: key);
+  ScorePage({Key key, this.title, this.gameCode, this.scorer, this.name}) : super(key: key);
 
   final String title;
 
   final int gameCode;
 
-  final int score;
+  final Scorer scorer;
 
   final String name;
 
@@ -424,9 +438,24 @@ class ScorePage extends StatefulWidget {
 
 class _ScorePageState extends State<ScorePage>{
 
+  Scorer scorer;
+  String name;
+  int score;
+
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
+    scorer = widget.scorer;
+    scorer.generateScores();
+    name = widget.name;
+    score = scorer.getScore(name);
+    return Scaffold(
+        appBar: new AppBar(
+          title: new Text("Scores"),
+          backgroundColor: Colors.pinkAccent,
+        ),
+        body: Center(
+            child: Text('$name' + ' : ' + '$score')
+        )
+    );
   }
 }
