@@ -18,20 +18,11 @@ class Game {
     _submittedWords = Set();
     _validWords = Set();
     loadInValidWords();
-    // _readInValidWords();
   }
 
   void loadInValidWords() async {
     String wordFile = await rootBundle.loadString(wordFilePath);
     List<String> lines = wordFile.split("\n");
-    for (String line in lines) {
-      _validWords.add(line.toUpperCase());
-    }
-  }
-
-  void _readInValidWords() {
-    var wordFile = new File(wordFilePath);
-    List<String> lines = wordFile.readAsLinesSync();
     for (String line in lines) {
       _validWords.add(line.toUpperCase());
     }
