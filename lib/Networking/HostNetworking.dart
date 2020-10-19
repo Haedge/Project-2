@@ -43,26 +43,27 @@ class HostNetworking {
 
   void _addNewGuest(Socket socket, Uint8List data) {
     String guestName = String.fromCharCodes(data);
-    if (!_guestSockets.containsKey(guestName)) {
-      _guestSockets[guestName] = socket;
-      screenNamesInGame.add(guestName);
-      _sendGuestListToAllGuests();
-    } else {
-      socket.write('Invalid Name: Name already in use');
-      socket.close();
+    if (_guestSockets.containsKey(guestName)) {
+      guestName = _distinguishRepeatName(guestName);
+      socket.writeln(_encoder.encode(guestName));
     }
+    _guestSockets[guestName] = socket;
+    screenNamesInGame.add(guestName);
   }
 
-  void _sendGuestListToAllGuests() {
-    for (String guest in _guestSockets.keys) {
-      _guestSockets[guest].write(_encoder.encode(screenNamesInGame));
+  String _distinguishRepeatName(String name) {
+    int c = 2;
+    String newName = '$name($c)';
+    while (_guestSockets.containsKey(newName)) {
+      c++;
+      newName = '$name($c)';
     }
+    return newName;
   }
 
   void startGame(int gameSeed) {
     _phase = GamePhase.started;
     for (String guest in _guestSockets.keys) {
-      _guestSockets[guest].writeln('Starting Game');
       _guestSockets[guest].writeln(_encoder.encode(gameSeed));
     }
   }

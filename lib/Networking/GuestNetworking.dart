@@ -9,13 +9,13 @@ final int port = 4444;
 
 class GuestNetworking {
   String _hostIP;
-  String _screenName;
+  String screenName;
   GamePhase _phase;
   JsonCodec _decoder;
   List userList;
 
 
-  GuestNetworking(this._hostIP, this._screenName) {
+  GuestNetworking(this._hostIP, this.screenName) {
     _phase = GamePhase.settingUp;
     _decoder = JsonCodec();
   }
@@ -25,7 +25,7 @@ class GuestNetworking {
       print('Connecting...');
       Socket socket = await Socket.connect(_hostIP, port);
       print('connected to host');
-      socket.write(_screenName);
+      socket.write(screenName);
       socket.listen(handleData,
       onDone: () {socket.close();});
       return SocketOutcome();
@@ -37,8 +37,13 @@ class GuestNetworking {
   void handleData(Uint8List data) {
     if (_phase == GamePhase.settingUp) {
       var decoded = _decoder.decode(String.fromCharCodes(data));
-      userList = decoded;
-      print(userList);
+      print(decoded);
+      if (decoded.runtimeType == String) {
+        screenName = decoded;
+        print('name changed to $decoded');
+      } if (decoded.runtimeType == int) {
+        print('received Game code');
+      }
     }
   }
 }
