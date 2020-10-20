@@ -30,6 +30,8 @@ class HostNetworking {
     _wordsFromGuests = Map();
   }
 
+  // Be sure to call this right after you initialize
+  // it
   Future<SocketOutcome> setUpServer() async {
     try {
       _server = await ServerSocket.bind(_address, port);
@@ -70,6 +72,8 @@ class HostNetworking {
     return newName;
   }
 
+  // This sends out the seed to guests and will return
+  // a map of their words once they send them in
   Future<Map> startGameAndAwaitResults(int gameSeed) {
     _phase = GamePhase.started;
     for (String guest in _guestSockets.keys) {
@@ -128,6 +132,7 @@ class HostNetworking {
     return true;
   }
 
+  // This sends the scores out to all guests
   void sendOutScores(Map<String, int> scores) {
     for (String guest in _guestsWhoHaveSubmittedWords) {
       _guestSockets[guest].write(_encoder.encode(scores));

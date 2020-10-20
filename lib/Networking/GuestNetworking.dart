@@ -20,6 +20,8 @@ class GuestNetworking {
     _decoder = JsonCodec();
   }
 
+  // Call this to connect to host and use await
+  // to await the seed
   Future<int> joinGameAndGetGameCode() async {
     await _connectToHost();
     _socket.write(_decoder.encode(screenName));
@@ -27,6 +29,8 @@ class GuestNetworking {
     return gameCode;
   }
 
+  // Call this after the game is over and use await to wait
+  // for the host to send the scores
   Future<Map> sendInWordsAndAwaitScores(Set words) async {
     await _connectToHost();
     Map<String, dynamic> wordsWithName = {
