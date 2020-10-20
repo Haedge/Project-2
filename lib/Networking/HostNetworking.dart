@@ -10,45 +10,54 @@ final int port = 4444;
 // For use by host
 
 class HostNetworking {
+  String screenName;
   GamePhase _phase;
+  InternetAddress _address;
+  ServerSocket _server;
   Map<String, Socket> _guestSockets;
   List<String> screenNamesInGame;
+  Map _wordsFromGuests;
+  Set _guestsWhoHaveSubmittedWords;
   JsonCodec _encoder;
 
-  HostNetworking(String screenName) {
+  HostNetworking(this.screenName) {
+    _address = InternetAddress.anyIPv4;
     _phase = GamePhase.settingUp;
     _guestSockets = Map();
     screenNamesInGame = [screenName];
     _encoder = JsonCodec();
+    _guestsWhoHaveSubmittedWords = Set();
+    _wordsFromGuests = Map();
   }
 
   Future<SocketOutcome> setUpServer() async {
     try {
-      ServerSocket server = await ServerSocket.bind(InternetAddress.anyIPv4, port);
-      server.listen(_makeConnection);
+      _server = await ServerSocket.bind(_address, port);
+      _server.listen(_makeInitialConnection);
       return SocketOutcome();
     } on SocketException catch (e) {
       return SocketOutcome(errorMessage: e.message);
     }
   }
 
-  void _makeConnection(Socket socket) {
+  void _makeInitialConnection(Socket socket) {
     socket.listen((data) {
-      if (_phase == GamePhase.settingUp) {
-        print('Received connection from ${socket.remoteAddress.address}');
-        _addNewGuest(socket, data);
-      }
-    });
+      print('Received connection from ${socket.remoteAddress.address}');
+      _addNewGuest(socket, data);
+    },
+    onDone: () {socket.destroy();});
   }
 
   void _addNewGuest(Socket socket, Uint8List data) {
-    String guestName = String.fromCharCodes(data);
+    String guestName = _encoder.decode(String.fromCharCodes(data));
     if (_guestSockets.containsKey(guestName)) {
       guestName = _distinguishRepeatName(guestName);
       socket.writeln(_encoder.encode(guestName));
     }
     _guestSockets[guestName] = socket;
     screenNamesInGame.add(guestName);
+    // For testing purposes
+    //startGameAndAwaitResults(2);
   }
 
   String _distinguishRepeatName(String name) {
@@ -61,10 +70,68 @@ class HostNetworking {
     return newName;
   }
 
-  void startGame(int gameSeed) {
+  Future<Map> startGameAndAwaitResults(int gameSeed) {
     _phase = GamePhase.started;
     for (String guest in _guestSockets.keys) {
       _guestSockets[guest].writeln(_encoder.encode(gameSeed));
+    }
+    _server.close();
+    return _receiveWords();
+  }
+
+  Future<Map> _receiveWords() async {
+    try {
+      _server = await ServerSocket.bind(_address, port);
+      await _server.listen((socket) async {
+        await _reconnectToGuest(socket);
+        print(_allGuestsSubmittedWords());
+        if (_allGuestsSubmittedWords()) {
+          _server.close();
+        }
+      }).asFuture().timeout(
+          Duration(minutes: 4),
+          onTimeout: () {});
+    } on SocketException catch(e) {
+      print(e.message);
+    }
+    // For testing purposes
+    //sendOutScores({'Guest1': 1, 'Host': 2});
+    return _wordsFromGuests;
+  }
+
+  Future<void> _reconnectToGuest(Socket socket) async {
+    print("Received connection from socket at ${socket.remoteAddress.address}");
+    _readInWords(socket, await socket.first);
+  }
+
+  // The words will come in as a list and need to be
+  // converted to a set
+  void _readInWords(Socket socket, Uint8List data) {
+    Map words = _encoder.decode(String.fromCharCodes(data));
+    print(words);
+    _wordsFromGuests[words['name']] = words['words'];
+    _guestSockets[words['name']] = socket;
+    _guestsWhoHaveSubmittedWords.add(words['name']);
+    print('Received words from ${words['name']}');
+  }
+
+  bool _allGuestsSubmittedWords() {
+    for (String guest in screenNamesInGame) {
+      print(guest);
+      print(_guestsWhoHaveSubmittedWords);
+      print(_guestsWhoHaveSubmittedWords.contains("Guest1"));
+      if (!_guestsWhoHaveSubmittedWords.contains(guest) && guest != screenName) {
+        print('$guest has not submitted words');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void sendOutScores(Map<String, int> scores) {
+    for (String guest in _guestsWhoHaveSubmittedWords) {
+      _guestSockets[guest].write(_encoder.encode(scores));
+      print('sent scores to $guest');
     }
   }
 }
