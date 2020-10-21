@@ -610,15 +610,11 @@ class AwaitScorePageState extends State<AwaitScorePage> {
 }
 
 class ScorePage extends StatefulWidget {
-  ScorePage({Key key, this.title, this.host, this.hNetwork, this.gNetwork, this.screenName, this.scores}) : super(key: key);
+  ScorePage({Key key, this.title, this.host, this.screenName, this.scores}) : super(key: key);
 
   final String title;
 
   final bool host;
-
-  final HostNetworking hNetwork;
-
-  final GuestNetworking gNetwork;
 
   final String screenName;
 
