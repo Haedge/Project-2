@@ -11,7 +11,7 @@ class GuestNetworking {
   String _hostIP;
   String screenName;
   JsonCodec _decoder;
-  int gameCode;
+  Map gameCodeAndSeed;
   Socket _socket;
   Map _scores;
 
@@ -22,11 +22,11 @@ class GuestNetworking {
 
   // Call this to connect to host and use await
   // to await the seed
-  Future<int> joinGameAndGetGameCode() async {
+  Future<Map> joinGameAndGetGameCode() async {
     await _connectToHost();
     _socket.write(_decoder.encode(screenName));
     await _socket.listen(_handleInitialData).asFuture();
-    return gameCode;
+    return gameCodeAndSeed;
   }
 
   // Call this after the game is over and use await to wait
@@ -61,7 +61,7 @@ class GuestNetworking {
       print('name changed to $decoded');
     } if (decoded.runtimeType == int) {
       print('received Game code');
-      gameCode = decoded;
+      gameCodeAndSeed = decoded;
       _socket.destroy();
     }
   }

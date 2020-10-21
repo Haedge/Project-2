@@ -74,10 +74,11 @@ class HostNetworking {
 
   // This sends out the seed to guests and will return
   // a map of their words once they send them in
-  Future<Map> startGameAndAwaitResults(int gameSeed) {
+  Future<Map> startGameAndAwaitResults(int gameSeed, int boardSize) {
     _phase = GamePhase.started;
+    Map sizeAndSeed = {'seed' : gameSeed, 'size': boardSize};
     for (String guest in _guestSockets.keys) {
-      _guestSockets[guest].writeln(_encoder.encode(gameSeed));
+      _guestSockets[guest].writeln(_encoder.encode(sizeAndSeed));
     }
     _server.close();
     return _receiveWords();
