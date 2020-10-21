@@ -16,7 +16,7 @@ class HostNetworking {
   ServerSocket _server;
   Map<String, Socket> _guestSockets;
   List<String> screenNamesInGame;
-  Map _wordsFromGuests;
+  Map wordsFromGuests;
   Set _guestsWhoHaveSubmittedWords;
   JsonCodec _encoder;
 
@@ -27,7 +27,7 @@ class HostNetworking {
     screenNamesInGame = [screenName];
     _encoder = JsonCodec();
     _guestsWhoHaveSubmittedWords = Set();
-    _wordsFromGuests = Map();
+    wordsFromGuests = Map();
   }
 
   // Be sure to call this right after you initialize
@@ -89,8 +89,8 @@ class HostNetworking {
       _server = await ServerSocket.bind(_address, port);
       await _server.listen((socket) async {
         await _reconnectToGuest(socket);
-        print(_allGuestsSubmittedWords());
-        if (_allGuestsSubmittedWords()) {
+        print(allGuestsSubmittedWords());
+        if (allGuestsSubmittedWords()) {
           _server.close();
         }
       }).asFuture().timeout(
@@ -101,7 +101,7 @@ class HostNetworking {
     }
     // For testing purposes
     //sendOutScores({'Guest1': 1, 'Host': 2});
-    return _wordsFromGuests;
+    return wordsFromGuests;
   }
 
   Future<void> _reconnectToGuest(Socket socket) async {
@@ -114,13 +114,13 @@ class HostNetworking {
   void _readInWords(Socket socket, Uint8List data) {
     Map words = _encoder.decode(String.fromCharCodes(data));
     print(words);
-    _wordsFromGuests[words['name']] = words['words'];
+    wordsFromGuests[words['name']] = words['words'];
     _guestSockets[words['name']] = socket;
     _guestsWhoHaveSubmittedWords.add(words['name']);
     print('Received words from ${words['name']}');
   }
 
-  bool _allGuestsSubmittedWords() {
+  bool allGuestsSubmittedWords() {
     for (String guest in screenNamesInGame) {
       print(guest);
       print(_guestsWhoHaveSubmittedWords);

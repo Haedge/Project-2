@@ -1,28 +1,28 @@
 class Scorer {
   Map<String, Set> _wordLists;
-  Map<String, int> _scores;
+  Map<String, int> scores;
 
   Scorer(this._wordLists) {
-    _scores = Map();
+    scores = Map();
     _copyNamesToScoreMap();
   }
 
   void _copyNamesToScoreMap() {
     for (String name in _wordLists.keys) {
-      _scores[name] = 0;
+      scores[name] = 0;
     }
   }
 
   void generateScores() {
     _findAndRemoveDuplicateWords();
-    for (String name in _scores.keys) {
+    for (String name in scores.keys) {
       for (String word in _wordLists[name]) {
-        _scores[name] += _scoreWord(word);
+        scores[name] += _scoreWord(word);
       }
     }
   }
 
-  int getScore(String name) => _scores[name];
+  int getScore(String name) => scores[name];
 
   Set getWords(String name) => _wordLists[name];
 

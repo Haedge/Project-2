@@ -13,7 +13,7 @@ class GuestNetworking {
   JsonCodec _decoder;
   Map gameCodeAndSeed;
   Socket _socket;
-  Map _scores;
+  Map scores;
 
 
   GuestNetworking(this._hostIP, this.screenName) {
@@ -39,7 +39,7 @@ class GuestNetworking {
     };
     _socket.write(_decoder.encode(wordsWithName));
     await _socket.listen(_handleIncomingScores).asFuture().timeout(Duration(minutes: 1));
-    return _scores;
+    return scores;
   }
 
   Future<SocketOutcome> _connectToHost() async {
@@ -65,7 +65,7 @@ class GuestNetworking {
   }
 
   void _handleIncomingScores(Uint8List data) {
-    _scores = _decoder.decode(String.fromCharCodes(data));
+    scores = _decoder.decode(String.fromCharCodes(data));
     _socket.destroy();
   }
 }

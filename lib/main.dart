@@ -198,8 +198,13 @@ class _JoinGamePageState extends State<JoinGamePage> {
                   Container(
                     width: 200,
                     height: 50,
-                    child:RaisedButton(child: Text("Join Game"), color: Color(0xfff6adc6), onPressed: () {
-                      //onPressed need to try to create a GuestNetworking that connects to a valid host and if it work go to StartGamePage
+                    child:RaisedButton(child: Text("Join Game"), color: Color(0xfff6adc6), onPressed: () async {
+                      GuestNetworking network = GuestNetworking(gameCodeC.text, nameC.text);
+                      Map gameCodeAndBoardSize = await network.joinGameAndGetGameCode();
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) =>PlayGamePage(title: "Play Game", seed: gameCodeAndBoardSize['seed'], host: false, size: gameCodeAndBoardSize['size'], gNetwork: network,))
+                      );
                     }),
                   )
                 ]
@@ -367,20 +372,20 @@ class _PlayGamePageState extends State<PlayGamePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => ScorePage(
-                          title: "Game Scores",
-                          host: widget.host,
-                          hNetwork: widget.hNetwork,
+                      builder: (context) => AwaitScorePage(
+                        host: widget.host,
+                        hNetwork: widget.hNetwork,
+                        words: game.getSubmittedWords(),
                       )
                   ),
               );} else {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => ScorePage(
-                        title: "Game Scores",
+                      builder: (context) => AwaitScorePage(
                         host: widget.host,
                         gNetwork: widget.gNetwork,
+                        words: game.getSubmittedWords(),
                       )
                   ),
                 );
@@ -476,8 +481,8 @@ class _PlayGamePageState extends State<PlayGamePage> {
 
 }
 
-class ScorePage extends StatefulWidget {
-  ScorePage({Key key, this.title, this.host, this.hNetwork, this.gNetwork}) : super(key: key);
+class AwaitScorePage extends StatefulWidget {
+  AwaitScorePage({Key key, this.title, this.host, this.hNetwork, this.gNetwork, this.words}) : super(key: key);
 
   final String title;
 
@@ -487,13 +492,139 @@ class ScorePage extends StatefulWidget {
 
   final GuestNetworking gNetwork;
 
+  final Set words;
+
+  @override
+  AwaitScorePageState createState() => AwaitScorePageState();
+}
+
+class AwaitScorePageState extends State<AwaitScorePage> {
+  Timer _timer;
+  int _gametime = 60;
+  int _gamemins = 3;
+  int _gamesecs = 00;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.host) {
+      return guestBuild(context);
+    } else {
+      return hostBuild(context);
+    }
+  }
+
+  _waitForScoresGuest() async {
+    Map scores;
+    try {
+      scores = await widget.gNetwork.sendInWordsAndAwaitScores(widget.words);
+    } on TimeoutException {
+      Map wordMap = {widget.gNetwork.screenName: widget.words};
+      Scorer sc = Scorer(wordMap);
+      sc.generateScores();
+      scores = sc.scores;
+    }
+    _goToScoreState(scores, widget.gNetwork.screenName);
+  }
+
+  void _startTimer() {
+    const second = const Duration(seconds: 1);
+    if (_timer == null) {
+      _timer = new Timer.periodic(second, (Timer timer) =>
+          setState(() {
+            if (_gametime < 1) {
+              timer.cancel();
+              _goToScoreState(_generateScores(widget.hNetwork.wordsFromGuests), widget.hNetwork.screenName);
+            }
+              else {
+                if (widget.hNetwork.allGuestsSubmittedWords()) {
+                  timer.cancel();
+                  _goToScoreState(_generateScores(widget.hNetwork.wordsFromGuests), widget.hNetwork.screenName);
+                }
+                _gametime = _gametime - 1;
+                _gamemins = _gametime ~/ 60;
+                _gamesecs = _gametime - (_gamemins * 60);
+              }
+            }
+          ));
+    }
+  }
+
+  void _goToScoreState(Map scores, String name) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) =>
+              ScorePage(
+                title: "Game Scores",
+                host: widget.host,
+                scores: scores,
+                screenName: name,
+              )
+      ),
+    );
+  }
+
+  Map _generateScores(Map namesToWords) {
+    Map<String, Set> scorableMap = _convertWordMapToScorableMap(namesToWords);
+    scorableMap[widget.hNetwork.screenName] = widget.words;
+    Scorer sc = Scorer(scorableMap);
+    sc.generateScores();
+    return sc.scores;
+  }
+
+  Map _convertWordMapToScorableMap(Map wordMap) {
+    Map<String, Set> newMap = Map();
+    for (String name in wordMap.keys) {
+      newMap[name] = new Set();
+      for (String word in wordMap[name]) {
+        newMap[name].add(word);
+      }
+    }
+    return newMap;
+  }
+
+  Widget guestBuild(BuildContext context) {
+    _waitForScoresGuest();
+    return Scaffold(
+        appBar: new AppBar(
+          title: new Text("Waiting for scores..."),
+          backgroundColor: Colors.pinkAccent,
+        )
+    );
+  }
+
+  Widget hostBuild(BuildContext context) {
+    _startTimer();
+    return Scaffold(
+        appBar: new AppBar(
+          title: new Text("Waiting for scores..."),
+          backgroundColor: Colors.pinkAccent,
+        ),
+    );
+  }
+}
+
+class ScorePage extends StatefulWidget {
+  ScorePage({Key key, this.title, this.host, this.hNetwork, this.gNetwork, this.screenName, this.scores}) : super(key: key);
+
+  final String title;
+
+  final bool host;
+
+  final HostNetworking hNetwork;
+
+  final GuestNetworking gNetwork;
+
+  final String screenName;
+
+  final Map scores;
+
   @override
   _ScorePageState createState() => _ScorePageState();
 }
 
 class _ScorePageState extends State<ScorePage>{
 
-  Scorer scorer;
   String name;
   int score;
 
@@ -501,16 +632,22 @@ class _ScorePageState extends State<ScorePage>{
 
   @override
   Widget build(BuildContext context) {
-    //TODO
+    return Scaffold(
+      appBar: new AppBar(
+        title: new Text("Scores"),
+        backgroundColor: Colors.pinkAccent,
+      ), body: Center(
+    child: Text(_generateScoresString(getOrder()))
+    ));
   }
 
-  List<String> getOrder(Map<String, int> _scores) {
+  List<String> getOrder() {
     List<String> order = new List<String>();
-    List<String> names = _scores.keys;
+    List<String> names =widget.scores.keys.toList();
     while (names.isNotEmpty) {
       int max = 0;
       for (int i = 0; i < names.length; i++) {
-        if (_scores[names[max]] < _scores[names[i]]) {
+        if (widget.scores[names[max]] < widget.scores[names[i]]) {
           max = i;
         }
       }
@@ -518,5 +655,18 @@ class _ScorePageState extends State<ScorePage>{
       names.removeAt(max);
     }
     return order;
+  }
+
+  String _generateScoresString(List<String> order) {
+    String scoreString = '';
+    for (int i=0; i<order.length; i++) {
+      if (order[i] != widget.screenName) {
+        scoreString += '${i + 1}. ${order[i]}: ${widget.scores[order[i]]}';
+      } else {
+        scoreString += '${i+1}. ${'You'}: ${widget.scores[order[i]]}';
+      }
+      scoreString += '\n';
+    }
+    return scoreString;
   }
 }
