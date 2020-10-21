@@ -497,6 +497,8 @@ class _ScorePageState extends State<ScorePage>{
   String name;
   int score;
 
+  // need help getting the scores
+
   @override
   Widget build(BuildContext context) {
     //TODO
