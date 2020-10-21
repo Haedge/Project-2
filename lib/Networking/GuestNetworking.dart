@@ -38,7 +38,7 @@ class GuestNetworking {
     "words": words.toList()
     };
     _socket.write(_decoder.encode(wordsWithName));
-    await _socket.listen(_handleIncomingScores).asFuture();
+    await _socket.listen(_handleIncomingScores).asFuture().timeout(Duration(minutes: 1));
     return _scores;
   }
 
