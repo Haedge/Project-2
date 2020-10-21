@@ -58,14 +58,14 @@ class _MyHomePageState extends State<MyHomePage> {
                   Container(
                     width: 300,
                     height: 50,
-                    child:RaisedButton(child: Text("Host a Game"), color: Colors.pinkAccent, onPressed: () {
+                    child:RaisedButton(child: Text("Host a Game"), color: Color(0xfff6adc6), onPressed: () {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => CreateGamePage()),);}),
                   ),
                   SizedBox(height:20),
                   Container(
                     width: 300,
                     height: 50,
-                    child:RaisedButton(child: Text("Join a Game"), color: Colors.pinkAccent, onPressed: () {
+                    child:RaisedButton(child: Text("Join a Game"), color: Color(0xfff6adc6), onPressed: () {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => JoinGamePage()),);}),
                   )
                 ]
@@ -143,7 +143,7 @@ class _CreateGamePageState extends State<CreateGamePage> {
                   Container(
                     width: 200,
                     height: 50,
-                    child:RaisedButton(child: Text("Host Game"), color: Colors.pinkAccent, onPressed: () {
+                    child:RaisedButton(child: Text("Host Game"), color: Color(0xfff6adc6), onPressed: () {
                       Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: true, gameCode: gameCode, size: sizes[sizeIndex-1], name: nameC.text)),);}),
                   )
                 ]
@@ -192,7 +192,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
                   Container(
                     width: 200,
                     height: 50,
-                    child:RaisedButton(child: Text("Join Game"), color: Colors.pinkAccent, onPressed: () {
+                    child:RaisedButton(child: Text("Join Game"), color: Color(0xfff6adc6), onPressed: () {
                       //Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: false, gameCode: int.parse(gameCodeC.text.toString()), name: nameC.text)),);
                     }),
                   )
@@ -247,7 +247,7 @@ class _StartGamePageState extends State<StartGamePage> {
               height: 50,
               child:RaisedButton(
                   child: Text("Start Game"),
-                  color: Colors.pinkAccent,
+                  color: Color(0xfff6adc6),
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name, game: new Game(widget.size, widget.gameCode),)),);
                   }
@@ -286,20 +286,17 @@ class PlayGamePage extends StatefulWidget {
 
 class _PlayGamePageState extends State<PlayGamePage> {
 
-  List<List<TilePainter>> boardRows = new List<List<TilePainter>>();
+  List<List<TilePainter>> tiles = new List<List<TilePainter>>();
   List<TilePainter> currentTiles = new List<TilePainter>();
   String currentWord = "";
   List<Position> currentPositions = new List<Position>();
-
-  int _gametime = 180;
-
+  int _gametime = 45;
   int _gamemins = 3;
-
   int _gamesecs = 00;
-
+  String gameSecsText = "00";
   Timer _timer;
-
   Map<String, Set> wordLists;
+
 
   void addToCurrentWord(TilePainter tile) {
     tile.select();
@@ -324,7 +321,6 @@ class _PlayGamePageState extends State<PlayGamePage> {
           setState(() {
             if (_gametime < 1) {
               timer.cancel();
-              widget.game.printSubmittedWords();
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -338,10 +334,13 @@ class _PlayGamePageState extends State<PlayGamePage> {
               );
             } else {
               _gametime = _gametime - 1;
-
               _gamemins = _gametime ~/ 60;
-
               _gamesecs = _gametime - (_gamemins * 60);
+              if (_gamesecs < 10) {
+                gameSecsText = "0$_gamesecs";
+              } else {
+                gameSecsText = "$_gamesecs";
+              }
             }
           }));
     }
@@ -356,41 +355,14 @@ class _PlayGamePageState extends State<PlayGamePage> {
   @override
   Widget build(BuildContext context) {
     List<Widget> body = new List<Widget>();
-    List<List<Widget>> uiBoardRows = new List<List<Widget>>();
-    for (int i=0; i<widget.size; i++) {
-      boardRows.add(new List<TilePainter>());
-      uiBoardRows.add(new List<Widget>());
-      for (int j=0; j<widget.size; j++) {
-        Position p =  Position(j,i);
-        boardRows[i].add(new  TilePainter(widget.game.getLetterAtPosition(p), p));
-        uiBoardRows[i].add(
-            GestureDetector( // figured this out at https://stackoverflow.com/questions/57100266/how-do-i-get-to-tap-on-a-custompaint-path-in-flutter-using-gesturedetect
-              child: Container(
-                  width: (MediaQuery.of(context).size.width - 20) / widget.size, // figured out how to get screen size at https://flutter.dev/docs/development/ui/layout/responsive
-                  height: (MediaQuery.of(context).size.width - 20) / widget.size,
-                  child: CustomPaint(painter: boardRows[i][j])
-              ),
-              onTap: () {
-                if (currentTiles.length == 0 || (p.isNeighbor(currentTiles.last.getPosition()) && !currentTiles.contains(boardRows[i][j]))) {
-                  addToCurrentWord(boardRows[i][j]);
-                }
-              },
-            )
-        );
-      }
-    }
-
-    //At very start of timer/every minute, it shows only one 0 instead of 00 like 2:00, will fix later on
+    List<List<Widget>> rows = getRows();
     _startTimer();
-    body.add(Text('$_gamemins' + ' : ' + '$_gamesecs'));
-
+    body.add(Text('$_gamemins' + ' : ' + gameSecsText));
     for (int i=0; i<widget.size; i++) {
-      body.add(Row(mainAxisAlignment: MainAxisAlignment.center,children: uiBoardRows[i]));
+      body.add(Row(mainAxisAlignment: MainAxisAlignment.center,children: rows[i]));
     }
-
     body.add(Text("Selected Word:  $currentWord"));
-
-    body.add(RaisedButton(child: Text("Enter Word"), onPressed: () {
+    body.add(RaisedButton(child: Text("Enter Word"), color: Color(0xfff6adc6), onPressed: () {
       print(widget.game.getSubmittedWords().length);
       bool b = widget.game.isWordValid(currentPositions);
       print(widget.game.getSubmittedWords().length);
@@ -403,7 +375,7 @@ class _PlayGamePageState extends State<PlayGamePage> {
           t.changeColor(Colors.redAccent);
         }
       }
-      Timer t = new Timer(const Duration(milliseconds: 500), () => resetCurrentWord());
+      Timer t = new Timer(const Duration(milliseconds: 300), () => resetCurrentWord());
     }
     ));
 
@@ -419,6 +391,33 @@ class _PlayGamePageState extends State<PlayGamePage> {
             )
         )
     );
+  }
+
+  List<List<Widget>> getRows() {
+    List<List<Widget>> rows = new List<List<Widget>>();
+    for (int i=0; i<widget.size; i++) {
+      tiles.add(new List<TilePainter>());
+      rows.add(new List<Widget>());
+      for (int j=0; j<widget.size; j++) {
+        Position p =  Position(j,i);
+        tiles[i].add(new  TilePainter(widget.game.getLetterAtPosition(p), p));
+        rows[i].add(
+            GestureDetector( // figured this out at https://stackoverflow.com/questions/57100266/how-do-i-get-to-tap-on-a-custompaint-path-in-flutter-using-gesturedetect
+              child: Container(
+                  width: (MediaQuery.of(context).size.width - 20) / widget.size, // figured out how to get screen size at https://flutter.dev/docs/development/ui/layout/responsive
+                  height: (MediaQuery.of(context).size.width - 20) / widget.size,
+                  child: CustomPaint(painter: tiles[i][j])
+              ),
+              onTap: () {
+                if (currentTiles.length == 0 || (p.isNeighbor(currentTiles.last.getPosition()) && !currentTiles.contains(tiles[i][j]))) {
+                  addToCurrentWord(tiles[i][j]);
+                }
+              },
+            )
+        );
+      }
+    }
+    return rows;
   }
 
 }
@@ -459,5 +458,21 @@ class _ScorePageState extends State<ScorePage>{
             child: Text('$name' + ' : ' + '$score')
         )
     );
+  }
+
+  List<String> getOrder(Map<String, int> _scores) {
+    List<String> order = new List<String>();
+    List<String> names = _scores.keys;
+    while (names.isNotEmpty) {
+      int max = 0;
+      for (int i = 0; i < names.length; i++) {
+        if (_scores[names[max]] < _scores[names[i]]) {
+          max = i;
+        }
+      }
+      order.add(names[max]);
+      names.removeAt(max);
+    }
+    return order;
   }
 }

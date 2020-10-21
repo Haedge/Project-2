@@ -13,7 +13,7 @@ class TilePainter extends CustomPainter {
   TilePainter(String letter, Position position) {
     this.letter = letter;
     this.position = position;
-    color = Colors.white;
+    color = Color(0xfff6adc6); // got this color from https://encycolorpedia.com/f7b3c2#:~:text=The%20hexadecimal%20color%20code%20%23f7b3c2,approximate%20wavelength%20of%20495.6%20nm.
     selected = false;
   }
 
@@ -32,7 +32,7 @@ class TilePainter extends CustomPainter {
 
   void reset() {
     selected = false;
-    color = Colors.white;
+    color = Color(0xfff6adc6);
   }
 
   @override

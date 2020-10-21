@@ -43,7 +43,7 @@ class Game {
       return false;
     }
     String wordString = _convertPositionListToString(positions);
-    print(wordString);
+    //print(wordString);
     if (_validWords.contains(wordString) && !_submittedWords.contains(wordString)) {
       _submittedWords.add(wordString);
       return true;
@@ -70,11 +70,5 @@ class Game {
       wordString += getLetterAtPosition(pos).toUpperCase();
     }
     return wordString;
-  }
-
-  void printSubmittedWords() {
-    for (String word in _submittedWords) {
-      print(word);
-    }
   }
 }
