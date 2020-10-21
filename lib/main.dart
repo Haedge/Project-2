@@ -144,7 +144,9 @@ class _CreateGamePageState extends State<CreateGamePage> {
                     width: 200,
                     height: 50,
                     child:RaisedButton(child: Text("Host Game"), color: Color(0xfff6adc6), onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: true, gameCode: gameCode, size: sizes[sizeIndex-1], name: nameC.text)),);}),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: true, gameCode: gameCode, size: sizes[sizeIndex-1], name: nameC.text)),);}),
                   )
                 ]
             )
@@ -229,7 +231,7 @@ class _StartGamePageState extends State<StartGamePage> {
     if (host){
       return hostBuild(context);
     }
-    return notHostBuild(context);
+    return guestBuild(context);
   }
 
   Widget hostBuild(BuildContext context) {
@@ -249,7 +251,7 @@ class _StartGamePageState extends State<StartGamePage> {
                   child: Text("Start Game"),
                   color: Color(0xfff6adc6),
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name, game: new Game(widget.size, widget.gameCode),)),);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name,)),);
                   }
                 ),
             ),
@@ -260,7 +262,19 @@ class _StartGamePageState extends State<StartGamePage> {
     );
   }
 
-  Widget notHostBuild(BuildContext context){
+  Widget playGameButton(BuildContext context) {
+    return RaisedButton(
+        child: Text("Start Game"),
+        color: Color(0xfff6adc6),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name,)),);
+        }
+    );
+  }
+
+  Widget guestBuild(BuildContext context){
     // TODO: implement build
     throw UnimplementedError();
   }
@@ -268,7 +282,7 @@ class _StartGamePageState extends State<StartGamePage> {
 }
 
 class PlayGamePage extends StatefulWidget {
-  PlayGamePage({Key key, this.title, this.gameCode, this.size, this.name, this.game}) : super(key: key);
+  PlayGamePage({Key key, this.title, this.gameCode, this.size, this.name}) : super(key: key);
 
   final String title;
 
@@ -277,8 +291,6 @@ class PlayGamePage extends StatefulWidget {
   final int size;
 
   final String name;
-
-  Game game;
 
   @override
   _PlayGamePageState createState() => _PlayGamePageState();
@@ -296,6 +308,15 @@ class _PlayGamePageState extends State<PlayGamePage> {
   String gameSecsText = "00";
   Timer _timer;
   Map<String, Set> wordLists;
+  bool started = false;
+  Game game;
+
+  void createGame() {
+    if (!started) {
+      started = true;
+      game = new Game(widget.size, widget.gameCode);
+    }
+  }
 
 
   void addToCurrentWord(TilePainter tile) {
@@ -327,7 +348,7 @@ class _PlayGamePageState extends State<PlayGamePage> {
                     builder: (context) => ScorePage(
                         title: "Score Game",
                         gameCode: widget.gameCode,
-                        scorer: Scorer(<String, Set>{widget.name: widget.game.getSubmittedWords()}),
+                        scorer: Scorer(<String, Set>{widget.name: game.getSubmittedWords()}),
                         name: widget.name
                     )
                 ),
@@ -354,6 +375,7 @@ class _PlayGamePageState extends State<PlayGamePage> {
 
   @override
   Widget build(BuildContext context) {
+    createGame();
     List<Widget> body = new List<Widget>();
     List<List<Widget>> rows = getRows();
     _startTimer();
@@ -363,9 +385,9 @@ class _PlayGamePageState extends State<PlayGamePage> {
     }
     body.add(Text("Selected Word:  $currentWord"));
     body.add(RaisedButton(child: Text("Enter Word"), color: Color(0xfff6adc6), onPressed: () {
-      print(widget.game.getSubmittedWords().length);
-      bool b = widget.game.isWordValid(currentPositions);
-      print(widget.game.getSubmittedWords().length);
+      print(game.getSubmittedWords().length);
+      bool b = game.isWordValid(currentPositions);
+      print(game.getSubmittedWords().length);
       if (b) {
         for (TilePainter t in currentTiles) {
           t.changeColor(Colors.greenAccent);
@@ -375,7 +397,7 @@ class _PlayGamePageState extends State<PlayGamePage> {
           t.changeColor(Colors.redAccent);
         }
       }
-      Timer t = new Timer(const Duration(milliseconds: 300), () => resetCurrentWord());
+      new Timer(const Duration(milliseconds: 300), () => resetCurrentWord());
     }
     ));
 
@@ -400,7 +422,7 @@ class _PlayGamePageState extends State<PlayGamePage> {
       rows.add(new List<Widget>());
       for (int j=0; j<widget.size; j++) {
         Position p =  Position(j,i);
-        tiles[i].add(new  TilePainter(widget.game.getLetterAtPosition(p), p));
+        tiles[i].add(new  TilePainter(game.getLetterAtPosition(p), p));
         rows[i].add(
             GestureDetector( // figured this out at https://stackoverflow.com/questions/57100266/how-do-i-get-to-tap-on-a-custompaint-path-in-flutter-using-gesturedetect
               child: Container(
