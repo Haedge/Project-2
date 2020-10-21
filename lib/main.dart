@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:boggle/Networking/GuestNetworking.dart';
+import 'package:boggle/Networking/HostNetworking.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:boggle/Game/Game.dart';
@@ -144,9 +146,11 @@ class _CreateGamePageState extends State<CreateGamePage> {
                     width: 200,
                     height: 50,
                     child:RaisedButton(child: Text("Host Game"), color: Color(0xfff6adc6), onPressed: () {
+                      HostNetworking network = HostNetworking(nameC.text);
+                      network.setUpServer();
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: true, gameCode: gameCode, size: sizes[sizeIndex-1], name: nameC.text)),);}),
+                        MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: true, size: sizes[sizeIndex-1], hNetwork: network,)),);}),
                   )
                 ]
             )
@@ -195,7 +199,7 @@ class _JoinGamePageState extends State<JoinGamePage> {
                     width: 200,
                     height: 50,
                     child:RaisedButton(child: Text("Join Game"), color: Color(0xfff6adc6), onPressed: () {
-                      //Navigator.push(context, MaterialPageRoute(builder: (context) => StartGamePage(title: "Start Game", host: false, gameCode: int.parse(gameCodeC.text.toString()), name: nameC.text)),);
+                      //onPressed need to try to create a GuestNetworking that connects to a valid host and if it work go to StartGamePage
                     }),
                   )
                 ]
@@ -207,23 +211,25 @@ class _JoinGamePageState extends State<JoinGamePage> {
 }
 
 class StartGamePage extends StatefulWidget {
-  StartGamePage({Key key, this.title, this.host, this.gameCode, this.size, this.name}) : super(key: key);
+  StartGamePage({Key key, this.title, this.host, this.size, this.hNetwork, this.gNetwork}) : super(key: key);
 
   final String title;
 
   final bool host;
 
-  final int gameCode;
-
   final int size;
 
-  final String name;
+  final HostNetworking hNetwork;
+
+  final GuestNetworking gNetwork;
 
   @override
   _StartGamePageState createState() => _StartGamePageState();
 }
 
 class _StartGamePageState extends State<StartGamePage> {
+
+  Random random = new Random();
 
   @override
   Widget build(BuildContext context) {
@@ -235,6 +241,18 @@ class _StartGamePageState extends State<StartGamePage> {
   }
 
   Widget hostBuild(BuildContext context) {
+    InternetAddress _address = InternetAddress.anyIPv4;
+    int seed = random.nextInt(99999);
+    List<Widget> body = new List<Widget>();
+    body.add(Text("Game Code:  $_address"));
+    body.add(Container(
+        width: 100,
+        height: 50,
+        child: playGameButton(seed)
+    ));
+    for (String name in widget.hNetwork.screenNamesInGame) {
+      body.add(Text(name));
+    }
     return Scaffold(
       appBar: new AppBar(
         title: new Text("Participants"),
@@ -243,54 +261,54 @@ class _StartGamePageState extends State<StartGamePage> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Container(
-              width: 100,
-              height: 50,
-              child:RaisedButton(
-                  child: Text("Start Game"),
-                  color: Color(0xfff6adc6),
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name,)),);
-                  }
-                ),
-            ),
-
-          ]
+          children: body
         )
       )
     );
   }
 
-  Widget playGameButton(BuildContext context) {
+  Widget playGameButton(int seed) {
     return RaisedButton(
         child: Text("Start Game"),
         color: Color(0xfff6adc6),
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", gameCode: widget.gameCode, size: widget.size, name: widget.name,)),);
+            MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", seed: seed, size: widget.size, hNetwork: widget.hNetwork,)),);
         }
     );
   }
 
   Widget guestBuild(BuildContext context){
-    // TODO: implement build
-    throw UnimplementedError();
+    String screenName = widget.gNetwork.screenName;
+    return Scaffold(
+      appBar: new AppBar(
+        title: new Text("Waiting for game to start..."),
+        backgroundColor: Colors.pinkAccent,
+      ), body: Center(
+        child: Text("Screen Name:  $screenName")
+    )
+    );
   }
+
+  // Not sure how to go to PlayGamePage as a guest when the seed and size are received
 
 }
 
 class PlayGamePage extends StatefulWidget {
-  PlayGamePage({Key key, this.title, this.gameCode, this.size, this.name}) : super(key: key);
+  PlayGamePage({Key key, this.title, this.seed, this.host, this.size, this.hNetwork, this.gNetwork}) : super(key: key);
 
   final String title;
 
-  final int gameCode;
+  final int seed;
+
+  final bool host;
 
   final int size;
 
-  final String name;
+  final HostNetworking hNetwork;
+
+  final GuestNetworking gNetwork;
 
   @override
   _PlayGamePageState createState() => _PlayGamePageState();
@@ -314,7 +332,10 @@ class _PlayGamePageState extends State<PlayGamePage> {
   void createGame() {
     if (!started) {
       started = true;
-      game = new Game(widget.size, widget.gameCode);
+      if (widget.host) {
+        widget.hNetwork.startGameAndAwaitResults(widget.seed, widget.size);
+      }
+      game = new Game(widget.size, widget.seed);
     }
   }
 
@@ -342,17 +363,28 @@ class _PlayGamePageState extends State<PlayGamePage> {
           setState(() {
             if (_gametime < 1) {
               timer.cancel();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => ScorePage(
-                        title: "Score Game",
-                        gameCode: widget.gameCode,
-                        scorer: Scorer(<String, Set>{widget.name: game.getSubmittedWords()}),
-                        name: widget.name
-                    )
-                ),
-              );
+              if (widget.host) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ScorePage(
+                          title: "Game Scores",
+                          host: widget.host,
+                          hNetwork: widget.hNetwork,
+                      )
+                  ),
+              );} else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ScorePage(
+                        title: "Game Scores",
+                        host: widget.host,
+                        gNetwork: widget.gNetwork,
+                      )
+                  ),
+                );
+              }
             } else {
               _gametime = _gametime - 1;
               _gamemins = _gametime ~/ 60;
@@ -445,15 +477,15 @@ class _PlayGamePageState extends State<PlayGamePage> {
 }
 
 class ScorePage extends StatefulWidget {
-  ScorePage({Key key, this.title, this.gameCode, this.scorer, this.name}) : super(key: key);
+  ScorePage({Key key, this.title, this.host, this.hNetwork, this.gNetwork}) : super(key: key);
 
   final String title;
 
-  final int gameCode;
+  final bool host;
 
-  final Scorer scorer;
+  final HostNetworking hNetwork;
 
-  final String name;
+  final GuestNetworking gNetwork;
 
   @override
   _ScorePageState createState() => _ScorePageState();
@@ -467,19 +499,7 @@ class _ScorePageState extends State<ScorePage>{
 
   @override
   Widget build(BuildContext context) {
-    scorer = widget.scorer;
-    scorer.generateScores();
-    name = widget.name;
-    score = scorer.getScore(name);
-    return Scaffold(
-        appBar: new AppBar(
-          title: new Text("Scores"),
-          backgroundColor: Colors.pinkAccent,
-        ),
-        body: Center(
-            child: Text('$name' + ' : ' + '$score')
-        )
-    );
+    //TODO
   }
 
   List<String> getOrder(Map<String, int> _scores) {
