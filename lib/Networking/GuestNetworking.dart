@@ -56,14 +56,12 @@ class GuestNetworking {
   void _handleInitialData(Uint8List data) {
     var decoded = _decoder.decode(String.fromCharCodes(data));
     print(decoded);
-    if (decoded.runtimeType == String) {
-      screenName = decoded;
-      print('name changed to $decoded');
-    } if (decoded.runtimeType == int) {
-      print('received Game code');
-      gameCodeAndSeed = decoded;
-      _socket.destroy();
+    print('received Game code');
+    gameCodeAndSeed = decoded;
+    if (gameCodeAndSeed['name'] != screenName) {
+      screenName = gameCodeAndSeed['name'];
     }
+    _socket.destroy();
   }
 
   void _handleIncomingScores(Uint8List data) {

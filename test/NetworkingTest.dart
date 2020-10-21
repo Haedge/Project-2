@@ -9,8 +9,8 @@ void main() async {
     SocketOutcome hostOutcome = await host.setUpServer();
     expect(hostOutcome.connectionSuccessful, true);
     GuestNetworking guest = GuestNetworking('127.0.0.1', "Guest1");
-    int gameCode = await guest.joinGameAndGetGameCode();
-    expect(gameCode == 2, true);
+    Map gameCode = await guest.joinGameAndGetGameCode();
+    expect(gameCode['seed'] == 2, true);
     Map scores = await guest.sendInWordsAndAwaitScores({'word1', 'word2', 'qjoi'});
     print(scores);
   });

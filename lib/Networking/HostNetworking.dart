@@ -54,12 +54,11 @@ class HostNetworking {
     String guestName = _encoder.decode(String.fromCharCodes(data));
     if (_guestSockets.containsKey(guestName)) {
       guestName = _distinguishRepeatName(guestName);
-      socket.writeln(_encoder.encode(guestName));
     }
     _guestSockets[guestName] = socket;
     screenNamesInGame.add(guestName);
     // For testing purposes
-    //startGameAndAwaitResults(2);
+    //startGameAndAwaitResults(2, 2);
   }
 
   String _distinguishRepeatName(String name) {
@@ -78,6 +77,7 @@ class HostNetworking {
     _phase = GamePhase.started;
     Map sizeAndSeed = {'seed' : gameSeed, 'size': boardSize};
     for (String guest in _guestSockets.keys) {
+      sizeAndSeed['name'] = guest;
       _guestSockets[guest].writeln(_encoder.encode(sizeAndSeed));
     }
     _server.close();
