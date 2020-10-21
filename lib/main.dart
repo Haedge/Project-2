@@ -274,7 +274,7 @@ class _StartGamePageState extends State<StartGamePage> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", seed: seed, size: widget.size, hNetwork: widget.hNetwork,)),);
+            MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", seed: seed, host: widget.host, size: widget.size, hNetwork: widget.hNetwork,)),);
         }
     );
   }
