@@ -200,10 +200,9 @@ class _JoinGamePageState extends State<JoinGamePage> {
                     height: 50,
                     child:RaisedButton(child: Text("Join Game"), color: Color(0xfff6adc6), onPressed: () async {
                       GuestNetworking network = GuestNetworking(gameCodeC.text, nameC.text);
-                      Map gameCodeAndBoardSize = await network.joinGameAndGetGameCode();
                       Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) =>PlayGamePage(title: "Play Game", seed: gameCodeAndBoardSize['seed'], host: false, size: gameCodeAndBoardSize['size'], gNetwork: network,))
+                          MaterialPageRoute(builder: (context) =>StartGamePage(title: 'Waiting for game to start', host: false, gNetwork: network,))
                       );
                     }),
                   )
@@ -286,6 +285,7 @@ class _StartGamePageState extends State<StartGamePage> {
 
   Widget guestBuild(BuildContext context){
     String screenName = widget.gNetwork.screenName;
+    waitForGameToStart();
     return Scaffold(
       appBar: new AppBar(
         title: new Text("Waiting for game to start..."),
@@ -296,7 +296,12 @@ class _StartGamePageState extends State<StartGamePage> {
     );
   }
 
-  // Not sure how to go to PlayGamePage as a guest when the seed and size are received
+  void waitForGameToStart() async {
+    Map boardSizeAndSeed = await widget.gNetwork.joinGameAndGetGameCode();
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => PlayGamePage(title: "Play Game", seed: boardSizeAndSeed['seed'], host: widget.host, size: boardSizeAndSeed['size'], gNetwork: widget.gNetwork,)),);
+  }
 
 }
 
@@ -325,7 +330,7 @@ class _PlayGamePageState extends State<PlayGamePage> {
   List<TilePainter> currentTiles = new List<TilePainter>();
   String currentWord = "";
   List<Position> currentPositions = new List<Position>();
-  int _gametime = 45;
+  int _gametime = 180;
   int _gamemins = 3;
   int _gamesecs = 00;
   String gameSecsText = "00";
